@@ -1,0 +1,80 @@
+# Skylink Media — technical SEO: canonical host, compression, caching, custom error pages
+
+# Custom 404 (matches site design; noindex'd in includes/header.php)
+ErrorDocument 404 /404.php
+
+# Don't expose directory listings
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Force https and the canonical host (https://skylinkmedia.co.in) used throughout
+  # the site's canonical/OG/JSON-LD tags — avoids www/non-www and http/https duplicate content.
+  # (Skipped on localhost so the site and /admin can be tested on local XAMPP.)
+  RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP_HOST} ^www\.skylinkmedia\.co\.in$ [NC]
+  RewriteRule ^ https://skylinkmedia.co.in%{REQUEST_URI} [L,R=301]
+
+  # BASE = URL path of this folder ("/" live, "/skylinkmedia/" on local XAMPP), for redirects below.
+  RewriteCond %{REQUEST_URI}::$1 ^(.*?/)(.*)::\2$
+  RewriteRule ^(.*)$ - [E=BASE:%1]
+
+  # Retired URLs from the old WordPress site (incl. spam pages injected when it was hacked):
+  # always answer 404 + noindex so Google drops them. /service-post/* and WordPress query URLs
+  # on the home page (/?service=…, /?p=…, /?page_id=…) are handled explicitly; everything else
+  # that no longer exists already falls through to the 404 page.
+  RewriteRule ^service-post(/.*)?$ 404.php [L]
+  RewriteCond %{QUERY_STRING} (^|&)(service|p|page_id|post_type|cat|tag|author|attachment_id|s)= [NC]
+  RewriteRule ^(index\.(html|php))?$ 404.php [L]
+
+  # Service pages moved from /services/*.php to keyword URLs — 301 so rankings and old links carry over.
+  RewriteRule ^services/seo\.php$ %{ENV:BASE}seo-services-in-indore [R=301,L]
+  RewriteRule ^services/social-media-marketing\.php$ %{ENV:BASE}social-media-marketing-services-in-indore [R=301,L]
+  RewriteRule ^services/meta-ads\.php$ %{ENV:BASE}meta-ads-services-in-indore [R=301,L]
+  RewriteRule ^services/google-ads\.php$ %{ENV:BASE}google-ads-services-in-indore [R=301,L]
+  RewriteRule ^services/web-design-development\.php$ %{ENV:BASE}web-design-development-services-in-indore [R=301,L]
+  RewriteRule ^services/?$ %{ENV:BASE}#services [R=301,L,NE]
+
+  # Home page lives at the root — a direct /index.html (or /index.php) request 301s to "/".
+  # (THE_REQUEST check so Apache's internal DirectoryIndex lookup for "/" doesn't loop.)
+  RewriteCond %{THE_REQUEST} \s[^?\s]*?/index\.(html|php)[?\s]
+  RewriteRule ^(index\.(html|php))?$ %{ENV:BASE} [R=301,L]
+
+  # Our Work page: served at /our-work; /our-work.php and the old /work/ folder URL redirect there.
+  RewriteCond %{THE_REQUEST} \s[^?\s]*?/our-work\.php[?\s]
+  RewriteRule ^ %{ENV:BASE}our-work [R=301,L]
+  RewriteRule ^work/?$ %{ENV:BASE}our-work [R=301,L]
+  RewriteRule ^our-work/?$ our-work.php [L]
+
+  # Service pages are served without ".php"; a direct ".php" request redirects to the clean URL.
+  RewriteCond %{THE_REQUEST} \s[^?\s]*?/([a-z0-9-]+-services-in-indore)\.php[?\s]
+  RewriteRule ^ %{ENV:BASE}%1 [R=301,L]
+  RewriteCond %{REQUEST_FILENAME}.php -f
+  RewriteRule ^([a-z0-9-]+-services-in-indore)/?$ $1.php [L]
+
+  # Blog: pretty article URLs — /blog/my-post -> blog/post.php?slug=my-post
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^blog/([a-z0-9-]+)/?$ blog/post.php?slug=$1 [L,QSA]
+</IfModule>
+
+# Compress text-based responses
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml text/javascript
+  AddOutputFilterByType DEFLATE application/javascript application/x-javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Browser caching for static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType text/html "access plus 0 seconds"
+</IfModule>

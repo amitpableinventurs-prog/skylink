@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: https://skylinkmedia.co.in/sitemap.xml
+Sitemap: https://skylinkmedia.co.in/blog/sitemap.php

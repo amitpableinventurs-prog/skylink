@@ -1,0 +1,14 @@
+# Live credentials (create on the server, never commit)
+php/config.local.php
+
+# Deploy bundles / local data
+*.zip
+data/*.sqlite
+data/*.imported-*
+uploads/blog/*
+!uploads/blog/.gitkeep
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
